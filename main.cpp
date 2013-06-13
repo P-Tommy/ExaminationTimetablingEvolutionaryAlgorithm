@@ -6,8 +6,16 @@
 #include <sstream>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "ear-f-83.crs"
-#define PROBLEM_STU "ear-f-83.stu"
+#define PROBLEM_CRS "asd.crs"
+#define PROBLEM_STU "asd.stu"
+
+void print_conflicts(std::vector< std::vector<int> > conflicts) {
+  for (std::vector< std::vector<int> >::iterator i = conflicts.begin() ; i != conflicts.end(); ++i) {
+    std::cout << "\n";
+    for (std::vector<int>::iterator conflict = (*i).begin() ; conflict != (*i).end(); ++conflict)
+      std::cout << ' ' << *conflict;
+  }
+}
 
 int main () {
 
@@ -54,6 +62,8 @@ int main () {
       }
     }
   }
+
+  print_conflicts(conflicts);
 
   return 0;
 }
