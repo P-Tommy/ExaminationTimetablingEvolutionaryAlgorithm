@@ -17,6 +17,50 @@ void print_conflicts(std::vector< std::vector<int> > conflicts) {
   }
 }
 
+class Timeslot
+{
+public:
+  static int used_timeslots;
+  int exams; // Total exams assigned to this Timeslot
+  int id; // An identifier for the timeslot
+
+  Timeslot() {
+    exams = 0;
+    used_timeslots++;
+    id = used_timeslots;
+  }
+  ~Timeslot();
+};
+int Timeslot::used_timeslots = 0;
+
+class Solution
+{
+public:
+  int aptitude;
+
+  // Each gen in the genotype saves the Timeslot to which the exam is assigned
+  std::vector<Timeslot*> genotype;
+
+  // Generates a random solution
+  // @param n_exams Total number of exams present
+  Solution(int n_exams) {
+    genotype.resize(n_exams);
+
+    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
+
+      // Fill every exam with it's own timeslot
+      *exam = new Timeslot();
+      (*exam)->exams++;
+    }
+  }
+
+  void print() {
+    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
+      std::cout << (*exam)->id << " ";
+    }
+  }
+};
+
 int main () {
 
   std::ifstream exams_file(PROBLEM_CRS);
@@ -63,7 +107,9 @@ int main () {
     }
   }
 
-  print_conflicts(conflicts);
+  Solution sol (10);
+
+  sol.print();
 
   return 0;
 }
