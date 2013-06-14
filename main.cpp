@@ -17,8 +17,13 @@
 #define W3 2
 #define W4 1
 
-std::vector< std::vector<int> > conflicts; // Conflicts matrix
+#define POP_SIZE 5
+
 unsigned total_exams; // Number of exams
+
+// The conflict matrix saves in each cell (i,j) the number of students
+// with a conflict between the exams i and j
+std::vector< std::vector<int> > conflicts;
 
 // Prints the conflict matrix
 void print_conflicts() {
@@ -33,23 +38,21 @@ void print_conflicts() {
 class Timeslot
 {
 public:
-  static int used_timeslots; // Counts the total timeslots that are occupied
   int exams; // Total exams assigned to this Timeslot
   int id; // An identifier for the timeslot
 
-  Timeslot() {
+  Timeslot(int _id) {
     exams = 0;
-    used_timeslots++;
-    id = used_timeslots;
+    id = _id;
   }
   ~Timeslot();
 };
-int Timeslot::used_timeslots = 0;
 
 // Represents a solution
 class Solution
 {
 private:
+  static int used_timeslots; // Counts the total timeslots that are occupied
 
   // Calculates the solution aptitude (and sets it)
   void calculate_aptitude() {
@@ -60,8 +63,11 @@ private:
       {
         if (conflicts[i][j] > 0) // If there is a conflict
         {
+          // Calculate the distance (timeslots in between) between the two conflicting exams
           int distance = abs(genotype[i]->id - genotype[j]->id);
 
+          // Depending on the distance, we assign a different penalization
+          // and it gets amplified by the number of students with the same conflict
           switch (distance) {
             case 0:
               aptitude += W0 * conflicts[i][j];
@@ -85,19 +91,24 @@ private:
 
 public:
   int aptitude;
+  std::vector<Timeslot*> timeslots;
 
   // Each gen in the genotype saves the Timeslot to which the exam is assigned
   std::vector<Timeslot*> genotype;
 
   // Generates a random solution
-  // @param n_exams Total number of exams present
-  Solution(int n_exams) {
-    genotype.resize(n_exams);
+  Solution() {
+    genotype.resize(total_exams);
+    timeslots.resize(total_exams);
+
+    int i = 0;
+    for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot, ++i) {
+      *timeslot = new Timeslot(i);
+    }
 
     for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
-
       // Fill every exam with it's own timeslot
-      *exam = new Timeslot();
+      *exam = timeslots[rand() % total_exams];
       (*exam)->exams++; // Increment the number of exams assigned to the timeslot
     }
 
@@ -111,8 +122,14 @@ public:
     std::cout << aptitude;
   }
 };
+int Solution::used_timeslots = 0;
+
+std::vector< Solution > population;
 
 int main () {
+  srand (time(NULL));
+
+  population.resize(POP_SIZE);
 
   std::ifstream exams_file(PROBLEM_CRS);
 
@@ -156,7 +173,7 @@ int main () {
     }
   }
 
-  Solution sol (10);
+  Solution sol;
 
   sol.print();
 
