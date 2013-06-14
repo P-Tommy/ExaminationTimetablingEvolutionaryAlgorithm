@@ -4,12 +4,24 @@
 #include <iterator>
 #include <vector>
 #include <sstream>
+#include <stdlib.h>
 #include <boost/tokenizer.hpp>
 
 #define PROBLEM_CRS "asd.crs"
 #define PROBLEM_STU "asd.stu"
 
-void print_conflicts(std::vector< std::vector<int> > conflicts) {
+// Penalizations
+#define W0 16
+#define W1 8
+#define W2 4
+#define W3 2
+#define W4 1
+
+std::vector< std::vector<int> > conflicts; // Conflicts matrix
+unsigned total_exams; // Number of exams
+
+// Prints the conflict matrix
+void print_conflicts() {
   for (std::vector< std::vector<int> >::iterator i = conflicts.begin() ; i != conflicts.end(); ++i) {
     std::cout << "\n";
     for (std::vector<int>::iterator conflict = (*i).begin() ; conflict != (*i).end(); ++conflict)
@@ -17,10 +29,11 @@ void print_conflicts(std::vector< std::vector<int> > conflicts) {
   }
 }
 
+// Represents a single timeslot
 class Timeslot
 {
 public:
-  static int used_timeslots;
+  static int used_timeslots; // Counts the total timeslots that are occupied
   int exams; // Total exams assigned to this Timeslot
   int id; // An identifier for the timeslot
 
@@ -33,8 +46,43 @@ public:
 };
 int Timeslot::used_timeslots = 0;
 
+// Represents a solution
 class Solution
 {
+private:
+
+  // Calculates the solution aptitude (and sets it)
+  void calculate_aptitude() {
+    aptitude = 0;
+
+    for (int i = 0; i < total_exams; ++i)
+      for (int j = i; j < total_exams; ++j)
+      {
+        if (conflicts[i][j] > 0) // If there is a conflict
+        {
+          int distance = abs(genotype[i]->id - genotype[j]->id);
+
+          switch (distance) {
+            case 0:
+              aptitude += W0 * conflicts[i][j];
+              break;
+            case 1:
+              aptitude += W1 * conflicts[i][j];
+              break;
+            case 2:
+              aptitude += W2 * conflicts[i][j];
+              break;
+            case 3:
+              aptitude += W3 * conflicts[i][j];
+              break;
+            default:
+              aptitude += W4 * conflicts[i][j];
+              break;
+          }
+        }
+      }
+  }
+
 public:
   int aptitude;
 
@@ -50,14 +98,17 @@ public:
 
       // Fill every exam with it's own timeslot
       *exam = new Timeslot();
-      (*exam)->exams++;
+      (*exam)->exams++; // Increment the number of exams assigned to the timeslot
     }
+
+    calculate_aptitude();
   }
 
   void print() {
     for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
       std::cout << (*exam)->id << " ";
     }
+    std::cout << aptitude;
   }
 };
 
@@ -67,12 +118,10 @@ int main () {
 
   // Count the newlines to get the total of exams
   exams_file.unsetf(std::ios_base::skipws); // Don't skip newlines
-  unsigned total_exams = std::count(
+  total_exams = std::count(
     std::istream_iterator<char>(exams_file),
     std::istream_iterator<char>(),
     '\n');
-
-  std::vector< std::vector<int> > conflicts;
 
   conflicts.resize(total_exams);
 
@@ -100,8 +149,8 @@ int main () {
         // We iterate on all the remaining exams in the line, after the current one
         // and mark the couple (current, next) and (next, current) as conflicted
         for(other_exam++; other_exam != tokens.end(); ++other_exam) {
-          conflicts[atoi((*exam).c_str()) - 1][atoi((*other_exam).c_str()) - 1] = 1;
-          conflicts[atoi((*other_exam).c_str()) - 1][atoi((*exam).c_str()) - 1] = 1;
+          conflicts[atoi((*exam).c_str()) - 1][atoi((*other_exam).c_str()) - 1]++;
+          conflicts[atoi((*other_exam).c_str()) - 1][atoi((*exam).c_str()) - 1]++;
         }
       }
     }
@@ -110,6 +159,8 @@ int main () {
   Solution sol (10);
 
   sol.print();
+
+  print_conflicts();
 
   return 0;
 }
