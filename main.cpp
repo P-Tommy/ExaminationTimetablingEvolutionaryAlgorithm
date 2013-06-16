@@ -67,34 +67,36 @@ private:
     aptitude = 0;
 
     for (int i = 0; i < total_exams; ++i)
+    {
       for (int j = i; j < total_exams; ++j)
       {
-        if (conflicts[i][j] > 0) // If there is a conflict
+        if (conflicts.at(i).at(j) > 0) // If there is a conflict
         {
           // Calculate the distance (timeslots in between) between the two conflicting exams
-          int distance = abs(genotype[i]->id - genotype[j]->id);
+          int distance = abs(genotype.at(i)->id - genotype.at(j)->id);
 
           // Depending on the distance, we assign a different penalization
           // and it gets amplified by the number of students with the same conflict
           switch (distance) {
             case 0:
-              aptitude += W0 * conflicts[i][j];
+              aptitude += W0 * conflicts.at(i).at(j);
               break;
             case 1:
-              aptitude += W1 * conflicts[i][j];
+              aptitude += W1 * conflicts.at(i).at(j);
               break;
             case 2:
-              aptitude += W2 * conflicts[i][j];
+              aptitude += W2 * conflicts.at(i).at(j);
               break;
             case 3:
-              aptitude += W3 * conflicts[i][j];
+              aptitude += W3 * conflicts.at(i).at(j);
               break;
             default:
-              aptitude += W4 * conflicts[i][j];
+              aptitude += W4 * conflicts.at(i).at(j);
               break;
           }
         }
       }
+    }
   }
 
 public:
@@ -128,28 +130,33 @@ public:
     for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
       std::cout << (*exam)->id << " ";
     }
-    std::cout << aptitude;
+    std::cout << " | " << aptitude << "\n";
   }
 };
 int Solution::used_timeslots = 0;
 
-std::vector< Solution > population;
 
+std::vector< Solution* > population;
 int main () {
   srand(time(NULL)); // Sets a random seed
 
-  population.resize(POP_SIZE);
-
   total_exams = get_total_exams();
+
   fill_conflicts(total_exams);
   print_conflicts();
+  population.resize(total_exams);
+
+  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution) {
+    *solution = new Solution();
+  }
+  print_pop();
 
   return 0;
 }
 
 void print_pop() {
-  for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution) {
-    (*solution).print();
+  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution) {
+    (*solution)->print();
   }
 }
 
