@@ -34,6 +34,14 @@ void print_conflicts() {
   }
 }
 
+// Fills the conflicts matrix
+void fill_conflicts(int total_exams);
+
+// Prints the population
+void print_pop();
+
+int get_total_exams();
+
 // Represents a single timeslot
 class Timeslot
 {
@@ -115,6 +123,7 @@ public:
     calculate_aptitude();
   }
 
+  // Prints the solution in stdout
   void print() {
     for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam) {
       std::cout << (*exam)->id << " ";
@@ -127,19 +136,24 @@ int Solution::used_timeslots = 0;
 std::vector< Solution > population;
 
 int main () {
-  srand (time(NULL));
+  srand(time(NULL)); // Sets a random seed
 
   population.resize(POP_SIZE);
 
-  std::ifstream exams_file(PROBLEM_CRS);
+  total_exams = get_total_exams();
+  fill_conflicts(total_exams);
+  print_conflicts();
 
-  // Count the newlines to get the total of exams
-  exams_file.unsetf(std::ios_base::skipws); // Don't skip newlines
-  total_exams = std::count(
-    std::istream_iterator<char>(exams_file),
-    std::istream_iterator<char>(),
-    '\n');
+  return 0;
+}
 
+void print_pop() {
+  for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution) {
+    (*solution).print();
+  }
+}
+
+void fill_conflicts(int total_exams) {
   conflicts.resize(total_exams);
 
   // Initializes the matrix
@@ -172,12 +186,17 @@ int main () {
       }
     }
   }
+}
 
-  Solution sol;
+int get_total_exams() {
+  std::ifstream exams_file(PROBLEM_CRS);
 
-  sol.print();
+  // Count the newlines to get the total of exams
+  exams_file.unsetf(std::ios_base::skipws); // Don't skip newlines
+  unsigned total_exams = std::count(
+    std::istream_iterator<char>(exams_file),
+    std::istream_iterator<char>(),
+    '\n');
 
-  print_conflicts();
-
-  return 0;
+  return total_exams;
 }
