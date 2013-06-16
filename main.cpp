@@ -21,6 +21,8 @@
 #define MAX_TIMESLOTS 5
 #define MAX_GENERATIONS 6 // Number of total generations before stopping
 
+#define PROB_MUTATION 0.2 // Probability of a mutation in one gene of a solution
+
 unsigned total_exams; // Number of exams
 
 // The conflict matrix saves in each cell (i,j) the number of students
@@ -143,14 +145,23 @@ public:
   ~Solution()
   {
     for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
-    {
       free(*timeslot);
-    }
   }
 
   void mutate()
   {
+    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    {
+      if (rand() % 100 / 100.0 < PROB_MUTATION)
+      {
+        // Assign a new random timeslot
+        (*exam)->exams--; // Decrement the number of exams assigned to the timeslot
+        *exam = timeslots.at(rand() % MAX_TIMESLOTS);
+        (*exam)->exams++; // Increment the number of exams assigned to the timeslot
+      }
+    }
 
+    calculate_aptitude();
   }
 
   void reproduce()
