@@ -18,6 +18,8 @@
 #define W4 1
 
 #define POP_SIZE 5
+#define MAX_TIMESLOTS 5
+#define MAX_GENERATIONS // Number of total generations before stopping
 
 unsigned total_exams; // Number of exams
 
@@ -72,6 +74,11 @@ private:
   {
     aptitude = 0;
 
+    // Count the total used timeslots
+    // int used_timeslots = 0;
+    // for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
+    //   if ((*timeslot)->exams > 0) used_timeslots++;
+
     for (int i = 0; i < total_exams; ++i)
     {
       for (int j = i; j < total_exams; ++j)
@@ -117,18 +124,16 @@ public:
   Solution()
   {
     genotype.resize(total_exams);
-    timeslots.resize(total_exams);
+    timeslots.resize(MAX_TIMESLOTS);
 
     int i = 0;
     for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot, ++i)
-    {
       *timeslot = new Timeslot(i);
-    }
 
     for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
     {
       // Fill every exam with it's own timeslot
-      *exam = timeslots[rand() % total_exams];
+      *exam = timeslots.at(rand() % MAX_TIMESLOTS);
       (*exam)->exams++; // Increment the number of exams assigned to the timeslot
     }
 
