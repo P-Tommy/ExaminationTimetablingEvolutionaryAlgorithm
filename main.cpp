@@ -37,12 +37,13 @@ void print_conflicts()
 }
 
 // Fills the conflicts matrix
-void fill_conflicts(int total_exams);
+void fill_conflicts();
 
 // Prints the population
 void print_pop();
 
 int get_total_exams();
+void generate_population();
 
 // Represents a single timeslot
 class Timeslot
@@ -145,7 +146,6 @@ public:
 };
 int Solution::used_timeslots = 0;
 
-
 std::vector< Solution* > population;
 int main ()
 {
@@ -153,14 +153,10 @@ int main ()
 
   total_exams = get_total_exams();
 
-  fill_conflicts(total_exams);
-  print_conflicts();
-  population.resize(total_exams);
+  fill_conflicts();
 
-  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
-  {
-    *solution = new Solution();
-  }
+  generate_population();
+
   print_pop();
 
   return 0;
@@ -174,7 +170,7 @@ void print_pop()
   }
 }
 
-void fill_conflicts(int total_exams)
+void fill_conflicts()
 {
   conflicts.resize(total_exams);
 
@@ -226,4 +222,14 @@ int get_total_exams()
                            '\n');
 
   return total_exams;
+}
+
+void generate_population()
+{
+  population.resize(total_exams);
+
+  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+  {
+    *solution = new Solution();
+  }
 }
