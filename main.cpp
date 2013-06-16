@@ -44,6 +44,7 @@ void print_pop();
 
 int get_total_exams();
 void generate_population();
+void destroy_population();
 
 // Represents a single timeslot
 class Timeslot
@@ -134,6 +135,14 @@ public:
     calculate_aptitude();
   }
 
+  ~Solution()
+  {
+    for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
+    {
+      free(*timeslot);
+    }
+  }
+
   // Prints the solution in stdout
   void print()
   {
@@ -159,6 +168,7 @@ int main ()
 
   print_pop();
 
+  destroy_population();
   return 0;
 }
 
@@ -231,5 +241,13 @@ void generate_population()
   for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
     *solution = new Solution();
+  }
+}
+
+void destroy_population()
+{
+  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+  {
+    free(*solution);
   }
 }
