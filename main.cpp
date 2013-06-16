@@ -19,7 +19,7 @@
 
 #define POP_SIZE 5
 #define MAX_TIMESLOTS 5
-#define MAX_GENERATIONS // Number of total generations before stopping
+#define MAX_GENERATIONS 6 // Number of total generations before stopping
 
 unsigned total_exams; // Number of exams
 
@@ -148,6 +148,16 @@ public:
     }
   }
 
+  void mutate()
+  {
+
+  }
+
+  void reproduce()
+  {
+
+  }
+
   // Prints the solution in stdout
   void print()
   {
@@ -172,6 +182,17 @@ int main ()
   generate_population();
 
   print_pop();
+
+  for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
+  {
+    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+    {
+      (*solution)->reproduce();
+      (*solution)->mutate();
+    }
+    std::cout << "Generation " << cur_generation << "\n";
+    print_pop();
+  }
 
   destroy_population();
   return 0;
