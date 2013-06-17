@@ -21,10 +21,10 @@
 #define MAX_TIMESLOTS 5
 #define MAX_GENERATIONS 6 // Number of total generations before stopping
 
-#define PROB_MUTATION 0.2 // Probability of a mutation in one gene of a solution
-#define PROB_REPRODUCTION 0.2 // Probability of a reproduction ocurring
+#define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
+#define PROB_CLIMB 0.1 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 5 // Maximum of iterations in the AC algorithm
+#define HC_ITERATIONS 20 // Maximum of iterations in the AC algorithm
 
 unsigned total_exams; // Number of exams
 
@@ -57,6 +57,33 @@ void destroy_population();
 class Solution
 {
 private:
+
+  void swap_exams(int a, int b)
+  {
+    int tmp = genotype.at(a);
+    genotype.at(a) = genotype.at(b);
+    genotype.at(b) = tmp;
+  }
+
+public:
+  int aptitude;
+
+  // Each gen in the genotype saves the Timeslot to which the exam is assigned
+  std::vector<int> genotype;
+
+  // Generates a random solution
+  Solution()
+  {
+    genotype.resize(total_exams);
+
+    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    {
+      // Fill every exam with it's own timeslot
+      *exam = rand() % MAX_TIMESLOTS;
+    }
+
+    calculate_aptitude();
+  }
 
   // Calculates the solution aptitude (and sets it)
   void calculate_aptitude()
@@ -102,33 +129,6 @@ private:
     }
   }
 
-void swap_exams(int a, int b)
-{
-  int tmp = genotype.at(a);
-  genotype.at(a) = genotype.at(b);
-  genotype.at(b) = tmp;
-}
-
-public:
-  int aptitude;
-
-  // Each gen in the genotype saves the Timeslot to which the exam is assigned
-  std::vector<int> genotype;
-
-  // Generates a random solution
-  Solution()
-  {
-    genotype.resize(total_exams);
-
-    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
-    {
-      // Fill every exam with it's own timeslot
-      *exam = rand() % MAX_TIMESLOTS;
-    }
-
-    calculate_aptitude();
-  }
-
   void mutate()
   {
     for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
@@ -145,12 +145,28 @@ public:
 
   void hill_climb()
   {
-  //   Solution candidate;
+    Solution candidate = *this;
 
-  //   for (int i = 0; i < HC_ITERATIONS; ++i)
-  //   {
+    int var_1, var_2;
+    for (int i = 0; i < HC_ITERATIONS; ++i)
+    {
+      var_1 = rand() % total_exams;
+      var_2 = rand() % total_exams;
 
-  //   }
+      candidate.swap_exams(var_1, var_2);
+      candidate.calculate_aptitude();
+
+      // If the new genotype has a better aptitude than the current best,
+      // we make the swap in the current solution. We do not copy the candidate
+      // over the current solution for performance reasons
+      if (candidate.aptitude < aptitude)
+      {
+        swap_exams(var_1, var_2);
+        calculate_aptitude();
+      }
+      else
+        candidate.swap_exams(var_1, var_2); // Reverse the change
+    }
   }
 
   // Prints the solution in stdout
@@ -181,12 +197,13 @@ int main ()
   {
     for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
     {
-      (*solution)->hill_climb();
+      if (rand() % 100 / 100.0 < PROB_CLIMB)
+        (*solution)->hill_climb();
       (*solution)->mutate();
     }
     std::cout << "Generation " << cur_generation << "\n";
-    print_pop();
   }
+  print_pop();
 
   destroy_population();
   return 0;
