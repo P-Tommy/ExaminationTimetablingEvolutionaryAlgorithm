@@ -22,6 +22,9 @@
 #define MAX_GENERATIONS 6 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.2 // Probability of a mutation in one gene of a solution
+#define PROB_REPRODUCTION 0.2 // Probability of a reproduction ocurring
+
+#define HC_ITERATIONS 5 // Maximum of iterations in the AC algorithm
 
 unsigned total_exams; // Number of exams
 
@@ -50,26 +53,10 @@ int get_total_exams();
 void generate_population();
 void destroy_population();
 
-// Represents a single timeslot
-class Timeslot
-{
-public:
-  int exams; // Total exams assigned to this Timeslot
-  int id; // An identifier for the timeslot
-
-  Timeslot(int _id)
-  {
-    exams = 0;
-    id = _id;
-  }
-  ~Timeslot();
-};
-
 // Represents a solution
 class Solution
 {
 private:
-  static int used_timeslots; // Counts the total timeslots that are occupied
 
   // Calculates the solution aptitude (and sets it)
   void calculate_aptitude()
@@ -78,7 +65,7 @@ private:
 
     // Count the total used timeslots
     // int used_timeslots = 0;
-    // for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
+    // for (std::vector<int>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
     //   if ((*timeslot)->exams > 0) used_timeslots++;
 
     for (int i = 0; i < total_exams; ++i)
@@ -88,7 +75,7 @@ private:
         if (conflicts.at(i).at(j) > 0) // If there is a conflict
         {
           // Calculate the distance (timeslots in between) between the two conflicting exams
-          int distance = abs(genotype.at(i)->id - genotype.at(j)->id);
+          int distance = abs(genotype.at(i) - genotype.at(j));
 
           // Depending on the distance, we assign a different penalization
           // and it gets amplified by the number of students with the same conflict
@@ -115,71 +102,67 @@ private:
     }
   }
 
+void swap_exams(int a, int b)
+{
+  int tmp = genotype.at(a);
+  genotype.at(a) = genotype.at(b);
+  genotype.at(b) = tmp;
+}
+
 public:
   int aptitude;
-  std::vector<Timeslot*> timeslots;
 
   // Each gen in the genotype saves the Timeslot to which the exam is assigned
-  std::vector<Timeslot*> genotype;
+  std::vector<int> genotype;
 
   // Generates a random solution
   Solution()
   {
     genotype.resize(total_exams);
-    timeslots.resize(MAX_TIMESLOTS);
 
-    int i = 0;
-    for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot, ++i)
-      *timeslot = new Timeslot(i);
-
-    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
     {
       // Fill every exam with it's own timeslot
-      *exam = timeslots.at(rand() % MAX_TIMESLOTS);
-      (*exam)->exams++; // Increment the number of exams assigned to the timeslot
+      *exam = rand() % MAX_TIMESLOTS;
     }
 
     calculate_aptitude();
   }
 
-  ~Solution()
-  {
-    for (std::vector<Timeslot*>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
-      free(*timeslot);
-  }
-
   void mutate()
   {
-    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
     {
       if (rand() % 100 / 100.0 < PROB_MUTATION)
       {
         // Assign a new random timeslot
-        (*exam)->exams--; // Decrement the number of exams assigned to the timeslot
-        *exam = timeslots.at(rand() % MAX_TIMESLOTS);
-        (*exam)->exams++; // Increment the number of exams assigned to the timeslot
+        *exam = rand() % MAX_TIMESLOTS;
       }
     }
 
     calculate_aptitude();
   }
 
-  void reproduce()
+  void hill_climb()
   {
+  //   Solution candidate;
 
+  //   for (int i = 0; i < HC_ITERATIONS; ++i)
+  //   {
+
+  //   }
   }
 
   // Prints the solution in stdout
   void print()
   {
-    for (std::vector<Timeslot*>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
     {
-      std::cout << (*exam)->id << " ";
+      std::cout << *exam << " ";
     }
     std::cout << " | " << aptitude << "\n";
   }
 };
-int Solution::used_timeslots = 0;
 
 std::vector< Solution* > population;
 int main ()
@@ -198,7 +181,7 @@ int main ()
   {
     for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
     {
-      (*solution)->reproduce();
+      (*solution)->hill_climb();
       (*solution)->mutate();
     }
     std::cout << "Generation " << cur_generation << "\n";
