@@ -17,14 +17,14 @@
 #define W3 2
 #define W4 1
 
-#define POP_SIZE 5
-#define MAX_TIMESLOTS 5
-#define MAX_GENERATIONS 6 // Number of total generations before stopping
+#define POP_SIZE 10
+#define MAX_TIMESLOTS 6
+#define MAX_GENERATIONS 100 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.1 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 20 // Maximum of iterations in the AC algorithm
+#define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
 
 unsigned total_exams; // Number of exams
 
@@ -42,16 +42,6 @@ void print_conflicts()
       std::cout << ' ' << *conflict;
   }
 }
-
-// Fills the conflicts matrix
-void fill_conflicts();
-
-// Prints the population
-void print_pop();
-
-int get_total_exams();
-void generate_population();
-void destroy_population();
 
 // Represents a solution
 class Solution
@@ -181,6 +171,19 @@ public:
 };
 
 std::vector< Solution* > population;
+
+// Fills the conflicts matrix
+void fill_conflicts();
+
+// Prints the population
+void print_pop();
+
+int get_total_exams();
+void generate_population();
+void destroy_population();
+
+Solution* select_best_solution();
+
 int main ()
 {
   srand(time(NULL)); // Sets a random seed
@@ -198,11 +201,16 @@ int main ()
     for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
     {
       if (rand() % 100 / 100.0 < PROB_CLIMB)
+      {
         (*solution)->hill_climb();
+      }
       (*solution)->mutate();
     }
-    std::cout << "Generation " << cur_generation << "\n";
   }
+
+  Solution *best = select_best_solution();
+  std::cout << "Best solution: ";
+  best->print();
   print_pop();
 
   destroy_population();
@@ -215,6 +223,17 @@ void print_pop()
   {
     (*solution)->print();
   }
+}
+
+Solution* select_best_solution()
+{
+  Solution *best = *(population.begin());
+
+  for (std::vector< Solution* >::iterator solution = population.begin() + 1; solution != population.end(); ++solution)
+    if ((*solution)->aptitude < best->aptitude)
+      best = *solution;
+
+  return best;
 }
 
 void fill_conflicts()
@@ -273,7 +292,7 @@ int get_total_exams()
 
 void generate_population()
 {
-  population.resize(total_exams);
+  population.resize(POP_SIZE);
 
   for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
