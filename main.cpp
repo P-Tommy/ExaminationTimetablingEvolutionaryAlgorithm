@@ -11,11 +11,12 @@
 #define PROBLEM_STU "tre-s-92.stu"
 
 // Penalizations
-#define W0 16
-#define W1 8
-#define W2 4
-#define W3 2
-#define W4 1
+#define W1 16
+#define W2 8
+#define W3 4
+#define W4 2
+#define W5 1
+#define HARD_PENALTY 1000 // Penalty for breaking a hard constraint
 
 #define POP_SIZE 50
 #define ELITIST_SELECT 3
@@ -96,7 +97,7 @@ public:
           switch (distance)
           {
           case 0:
-            aptitude += W0 * conflicts.at(i).at(j);
+            aptitude += HARD_PENALTY * conflicts.at(i).at(j);
             break;
           case 1:
             aptitude += W1 * conflicts.at(i).at(j);
@@ -107,8 +108,11 @@ public:
           case 3:
             aptitude += W3 * conflicts.at(i).at(j);
             break;
-          default:
+          case 4:
             aptitude += W4 * conflicts.at(i).at(j);
+            break;
+          case 5:
+            aptitude += W5 * conflicts.at(i).at(j);
             break;
           }
         }
