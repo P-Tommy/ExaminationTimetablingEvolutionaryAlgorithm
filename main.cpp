@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "asd.crs"
-#define PROBLEM_STU "asd.stu"
+#define PROBLEM_CRS "tre-s-92.crs"
+#define PROBLEM_STU "tre-s-92.stu"
 
 // Penalizations
 #define W0 16
@@ -17,16 +17,18 @@
 #define W3 2
 #define W4 1
 
-#define POP_SIZE 10
-#define MAX_TIMESLOTS 6
+#define POP_SIZE 50
+#define ELITIST_SELECT 3
+#define MAX_TIMESLOTS 23
 #define MAX_GENERATIONS 100 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
-#define PROB_CLIMB 0.1 // Probability of a HC ocurring
+#define PROB_CLIMB 0.25 // Probability of a HC ocurring
 
 #define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
 
 unsigned total_exams; // Number of exams
+unsigned total_students; // Number of students
 
 // The conflict matrix saves in each cell (i,j) the number of students
 // with a conflict between the exams i and j
@@ -56,7 +58,7 @@ private:
   }
 
 public:
-  int aptitude;
+  float aptitude;
 
   // Each gen in the genotype saves the Timeslot to which the exam is assigned
   std::vector<int> genotype;
@@ -79,11 +81,6 @@ public:
   void calculate_aptitude()
   {
     aptitude = 0;
-
-    // Count the total used timeslots
-    // int used_timeslots = 0;
-    // for (std::vector<int>::iterator timeslot = timeslots.begin(); timeslot != timeslots.end(); ++timeslot)
-    //   if ((*timeslot)->exams > 0) used_timeslots++;
 
     for (int i = 0; i < total_exams; ++i)
     {
@@ -117,6 +114,8 @@ public:
         }
       }
     }
+
+    aptitude /= total_students;
   }
 
   void mutate()
@@ -162,7 +161,8 @@ public:
   // Prints the solution in stdout
   void print()
   {
-    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    int i=0;
+    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam, ++i)
     {
       std::cout << *exam << " ";
     }
@@ -184,6 +184,11 @@ void destroy_population();
 
 Solution* select_best_solution();
 
+bool compare_sol(Solution* a, Solution* b)
+{
+  return (*a).aptitude < (*b).aptitude;
+}
+
 int main ()
 {
   srand(time(NULL)); // Sets a random seed
@@ -194,11 +199,12 @@ int main ()
 
   generate_population();
 
-  print_pop();
-
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
-    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+
+    // For Elitism, we only change de top half of the population (the worse solutions)
+    std::sort(population.begin(), population.end(), compare_sol);
+    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end() - ELITIST_SELECT; ++solution)
     {
       if (rand() % 100 / 100.0 < PROB_CLIMB)
       {
@@ -211,7 +217,6 @@ int main ()
   Solution *best = select_best_solution();
   std::cout << "Best solution: ";
   best->print();
-  print_pop();
 
   destroy_population();
   return 0;
@@ -253,6 +258,7 @@ void fill_conflicts()
   std::string line;
   while (std::getline(infile, line))
   {
+    total_students++;
 
     // We tokenize the line and mark as conflicts every pair of exams
     // that appears in the same line
@@ -274,6 +280,8 @@ void fill_conflicts()
       }
     }
   }
+
+  infile.close();
 }
 
 int get_total_exams()
@@ -286,7 +294,7 @@ int get_total_exams()
                            std::istream_iterator<char>(exams_file),
                            std::istream_iterator<char>(),
                            '\n');
-
+  exams_file.close();
   return total_exams;
 }
 
