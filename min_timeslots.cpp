@@ -22,10 +22,11 @@
 #define MAX_GENERATIONS 1000 // Number of total generations before stopping
 #define ELITIST_SELECT 5
 
-#define PROB_MUTATION 0.02 // Probability of a mutation in one gene of a solution
-#define PROB_CLIMB 0.4 // Probability of a HC ocurring
+#define PROB_MUTATION 0.1 // Probability of a mutation in one gene of a solution
+#define PROB_CLIMB 0.2 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 50 // Maximum of iterations in the AC algorithm
+#define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
+#define MAX_HC_RETRIES 100 // Maximum retries for searching a feasible solution
 
 unsigned total_exams; // Number of exams
 
@@ -53,7 +54,7 @@ public:
       int random;
       do {
         random = rand() % (i+1);
-        genotype.push_back(i);
+        genotype.push_back(random);
         if (is_feasible(i))
           break;
         else
@@ -113,12 +114,22 @@ public:
       if (rand() % 100 / 100.0 < PROB_MUTATION)
       {
         // Mutate until we have a feasible solution
-        do
+        for (int retries = 0; retries < MAX_HC_RETRIES; ++retries)
         {
+          int prev_timeslot = *exam;
           exams_in_timeslot[*exam]--;
           *exam = used_timeslots.at(rand() % used_timeslots.size());
           exams_in_timeslot[*exam]++;
-        } while (!is_feasible());
+
+          if(is_feasible())
+            break;
+          else // Undo the changes
+          {
+            exams_in_timeslot[*exam]--;
+            *exam = prev_timeslot;
+            exams_in_timeslot[*exam]++;
+          }
+        };
       }
     }
 
@@ -130,17 +141,22 @@ public:
   {
     Solution candidate = *this;
 
-    int var;
     for (int i = 0; i < HC_ITERATIONS; ++i)
     {
-      int prev_timeslot;
-      while(candidate.is_feasible())
+      int prev_timeslot, retries = 0;
+      int var = rand() % total_exams;
+      while(retries < MAX_HC_RETRIES)
       {
-        var = rand() % total_exams;
-
         prev_timeslot = candidate.genotype.at(var);
 
         candidate.genotype.at(var) = used_timeslots.at(rand() % used_timeslots.size());
+        retries++;
+
+        // Iterate until we find a feasible solution
+        if (candidate.is_feasible())
+          break;
+        else
+          candidate.genotype.at(var) = prev_timeslot; // Reverse the change
       }
 
       recalculate_used_timeslots();
@@ -215,13 +231,14 @@ int main ()
   fill_conflicts();
 
   generate_population();
+    print_pop();
 
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
     std::sort(population.begin(), population.end(), compare_sol);
 
-    std::cout << "Generation " << cur_generation << ", Best: " << population.front()->aptitude << "\n";
-
+    std::cout << "Generation " << cur_generation << ", Best: " << population.front()->aptitude << " Worst: " << population.back()->aptitude << "\n";
+    // print_pop();
     // We select the best solutions
     for (std::vector< Solution* >::iterator solution = population.begin(); solution != population.begin() + ELITIST_SELECT; ++solution)
     {
