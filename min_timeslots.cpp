@@ -18,12 +18,12 @@
 #define W3 2
 #define W4 1
 
-#define POP_SIZE 50
-#define MAX_GENERATIONS 100 // Number of total generations before stopping
-#define ELITIST_SELECT 10
+#define POP_SIZE 20
+#define MAX_GENERATIONS 1000 // Number of total generations before stopping
+#define ELITIST_SELECT 5
 
-#define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
-#define PROB_CLIMB 0.1 // Probability of a HC ocurring
+#define PROB_MUTATION 0.02 // Probability of a mutation in one gene of a solution
+#define PROB_CLIMB 0.4 // Probability of a HC ocurring
 
 #define HC_ITERATIONS 50 // Maximum of iterations in the AC algorithm
 
@@ -33,17 +33,6 @@ unsigned total_exams; // Number of exams
 // with a conflict between the exams i and j
 std::vector< std::vector<int> > conflicts;
 
-// Prints the conflict matrix
-void print_conflicts()
-{
-  for (std::vector< std::vector<int> >::iterator i = conflicts.begin() ; i != conflicts.end(); ++i)
-  {
-    std::cout << "\n";
-    for (std::vector<int>::iterator conflict = (*i).begin() ; conflict != (*i).end(); ++conflict)
-      std::cout << ' ' << *conflict;
-  }
-}
-
 // Represents a solution
 class Solution
 {
@@ -52,21 +41,28 @@ public:
 
   // Each gen in the genotype saves the Timeslot to which the exam is assigned
   std::vector<int> genotype;
+  std::vector<int> used_timeslots;
   std::map<int, int> exams_in_timeslot; // map<Timeslot id, # of exams assigned>
 
   // Generates a random solution
   Solution()
   {
-    genotype.resize(total_exams);
-
-    int i = 0;
-    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam, ++i)
+    for (int i = 0; i < total_exams; ++i)
     {
       // Fill every exam with it's own timeslot to generate a feasible solution
-      *exam = i;
+      int random;
+      do {
+        random = rand() % (i+1);
+        genotype.push_back(i);
+        if (is_feasible(i))
+          break;
+        else
+          genotype.pop_back();
+      } while(true);
       exams_in_timeslot[i] = 1;
     }
 
+    recalculate_used_timeslots();
     calculate_aptitude();
   }
 
@@ -78,9 +74,16 @@ public:
     aptitude = 0;
 
     // Count the total used timeslots
+    aptitude = used_timeslots.size();
+  }
+
+  void recalculate_used_timeslots()
+  {
+    used_timeslots.clear();
+
     for (std::map<int, int>::iterator timeslot=exams_in_timeslot.begin(); timeslot!=exams_in_timeslot.end(); ++timeslot)
       if (timeslot->second > 0)
-        aptitude++;
+        used_timeslots.push_back(timeslot->first);
   }
 
   // Returns true if the solution is feasible.
@@ -90,6 +93,15 @@ public:
       for (int j = i + 1; j < total_exams; ++j)
         if (conflicts.at(i).at(j) > 0 && genotype.at(i) == genotype.at(j)) // If there is a conflict
           return false; // Solution not feasible
+
+    return true;
+  }
+
+  bool is_feasible(int exam)
+  {
+    for (int i = 0; i < genotype.size(); ++i)
+      if (i != exam && conflicts.at(exam).at(i) > 0 && genotype.at(exam) == genotype.at(i)) // If there is a conflict
+        return false; // Solution not feasible
 
     return true;
   }
@@ -104,12 +116,13 @@ public:
         do
         {
           exams_in_timeslot[*exam]--;
-          *exam = rand() % total_exams;
+          *exam = used_timeslots.at(rand() % used_timeslots.size());
           exams_in_timeslot[*exam]++;
         } while (!is_feasible());
       }
     }
 
+    recalculate_used_timeslots();
     calculate_aptitude();
   }
 
@@ -127,9 +140,11 @@ public:
 
         prev_timeslot = candidate.genotype.at(var);
 
-        candidate.genotype.at(var) = rand() % total_exams;
-        candidate.calculate_aptitude();
+        candidate.genotype.at(var) = used_timeslots.at(rand() % used_timeslots.size());
       }
+
+      recalculate_used_timeslots();
+      candidate.calculate_aptitude();
 
       // If the new genotype has a better aptitude than the current best,
       // we make the swap in the current solution. We do not copy the candidate
@@ -137,6 +152,8 @@ public:
       if (candidate.aptitude < aptitude)
       {
         genotype.at(var) = candidate.genotype.at(var);
+
+        recalculate_used_timeslots();
         calculate_aptitude();
       }
       else
@@ -153,6 +170,16 @@ public:
       std::cout << " " << *exam;
     }
     std::cout << " | " << aptitude << "\n";
+  }
+
+  void print_conflicts()
+  {
+    // Print Conflicts
+    std::cout << "\nConflicts: ";
+    for (int i = 0; i < total_exams; ++i)
+      for (int j = i + 1; j < total_exams; ++j)
+        if (conflicts.at(i).at(j) > 0 && genotype.at(i) == genotype.at(j)) // If there is a conflict
+          std::cout << " " << i << "&" << j << " ";
   }
 };
 bool Solution::operator< (Solution param) {
@@ -191,8 +218,11 @@ int main ()
 
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
-    // We select the best solutions
     std::sort(population.begin(), population.end(), compare_sol);
+
+    std::cout << "Generation " << cur_generation << ", Best: " << population.front()->aptitude << "\n";
+
+    // We select the best solutions
     for (std::vector< Solution* >::iterator solution = population.begin(); solution != population.begin() + ELITIST_SELECT; ++solution)
     {
       Solution* best = new Solution(*(*solution));
