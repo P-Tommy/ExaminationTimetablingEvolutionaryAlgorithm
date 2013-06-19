@@ -8,8 +8,8 @@
 #include <map>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "hec-s-92.crs"
-#define PROBLEM_STU "hec-s-92.stu"
+#define PROBLEM_CRS "yor-f-83.crs"
+#define PROBLEM_STU "yor-f-83.stu"
 
 // Penalizations
 #define W0 16
@@ -18,15 +18,15 @@
 #define W3 2
 #define W4 1
 
-#define POP_SIZE 20
+#define POP_SIZE 50
 #define MAX_GENERATIONS 1000 // Number of total generations before stopping
-#define ELITIST_SELECT 5
+#define ELITIST_SELECT 1
 
 #define PROB_MUTATION 0.1 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.2 // Probability of a HC ocurring
 
 #define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
-#define MAX_HC_RETRIES 100 // Maximum retries for searching a feasible solution
+#define MAX_HC_RETRIES 50 // Maximum retries for searching a feasible solution
 
 unsigned total_exams; // Number of exams
 
@@ -53,7 +53,7 @@ public:
       // Fill every exam with it's own timeslot to generate a feasible solution
       int random;
       do {
-        random = rand() % (i+1);
+        random = (int)(((float) total_exams)*rand()/(RAND_MAX + 1.0));
         genotype.push_back(random);
         if (is_feasible(i))
           break;
@@ -111,14 +111,14 @@ public:
   {
     for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
     {
-      if (rand() % 100 / 100.0 < PROB_MUTATION)
+      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
       {
         // Mutate until we have a feasible solution
         for (int retries = 0; retries < MAX_HC_RETRIES; ++retries)
         {
           int prev_timeslot = *exam;
           exams_in_timeslot[*exam]--;
-          *exam = used_timeslots.at(rand() % used_timeslots.size());
+          *exam = (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0));
           exams_in_timeslot[*exam]++;
 
           if(is_feasible())
@@ -144,7 +144,7 @@ public:
     for (int i = 0; i < HC_ITERATIONS; ++i)
     {
       int prev_timeslot, retries = 0;
-      int var = rand() % total_exams;
+      int var = (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0));
       while(retries < MAX_HC_RETRIES)
       {
         prev_timeslot = candidate.genotype.at(var);
@@ -223,7 +223,7 @@ bool compare_sol(Solution* a, Solution* b)
 
 int main ()
 {
-  srand(time(NULL)); // Sets a random seed
+  srand(10000); // Sets a random seed
 
   std::vector<Solution*> elite_solutions;
   total_exams = get_total_exams();
@@ -231,7 +231,7 @@ int main ()
   fill_conflicts();
 
   generate_population();
-    print_pop();
+    // print_pop();
 
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
@@ -248,7 +248,7 @@ int main ()
 
     for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
     {
-      if (rand() % 100 / 100.0 < PROB_CLIMB)
+      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
       {
         (*solution)->hill_climb();
       }
