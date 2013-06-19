@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "tre-s-92.crs"
-#define PROBLEM_STU "tre-s-92.stu"
+#define PROBLEM_CRS "hec-s-92.crs"
+#define PROBLEM_STU "hec-s-92.stu"
 
 // Penalizations
 #define W1 16
@@ -19,14 +19,14 @@
 #define HARD_PENALTY 1000 // Penalty for breaking a hard constraint
 
 #define POP_SIZE 50
-#define ELITIST_SELECT 3
-#define MAX_TIMESLOTS 23
+#define ELITIST_SELECT 5
+#define MAX_TIMESLOTS 18
 #define MAX_GENERATIONS 100 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.25 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
+#define HC_ITERATIONS 50 // Maximum of iterations in the AC algorithm
 
 unsigned total_exams; // Number of exams
 unsigned total_students; // Number of students
@@ -83,10 +83,9 @@ public:
   {
     aptitude = 0;
 
+    // The conflicts matrix is symmetric, so we iterate above the diagonal
     for (int i = 0; i < total_exams; ++i)
-    {
-      for (int j = i; j < total_exams; ++j)
-      {
+      for (int j = i + 1; j < total_exams; ++j)
         if (conflicts.at(i).at(j) > 0) // If there is a conflict
         {
           // Calculate the distance (timeslots in between) between the two conflicting exams
@@ -116,8 +115,6 @@ public:
             break;
           }
         }
-      }
-    }
 
     aptitude /= total_students;
   }
@@ -170,7 +167,13 @@ public:
     {
       std::cout << *exam << " ";
     }
-    std::cout << " | " << aptitude << "\n";
+    // Print Conflicts
+    std::cout << "\nConflicts: ";
+    for (int i = 0; i < total_exams; ++i)
+      for (int j = i + 1; j < total_exams; ++j)
+        if (conflicts.at(i).at(j) > 0 && genotype.at(i) == genotype.at(j)) // If there is a conflict
+          std::cout << " " << i << "&" << j << " ";
+    std::cout << "\n Aptitude: " << aptitude << "\n";
   }
 };
 
@@ -199,16 +202,23 @@ int main ()
 
   total_exams = get_total_exams();
 
+  std::vector<Solution*> elite_solutions;
+
   fill_conflicts();
 
   generate_population();
 
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
-
-    // For Elitism, we only change de top half of the population (the worse solutions)
+    // We select the best solutions
     std::sort(population.begin(), population.end(), compare_sol);
-    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end() - ELITIST_SELECT; ++solution)
+    for (std::vector< Solution* >::iterator solution = population.begin(); solution != population.begin() + ELITIST_SELECT; ++solution)
+    {
+      Solution* best = new Solution(*(*solution));
+      elite_solutions.push_back(best);
+    }
+
+    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
     {
       if (rand() % 100 / 100.0 < PROB_CLIMB)
       {
@@ -216,6 +226,16 @@ int main ()
       }
       (*solution)->mutate();
     }
+
+    std::sort(population.begin(), population.end(), compare_sol);
+    for (std::vector< Solution* >::iterator elite = elite_solutions.begin(), solution = population.end() - 1;
+      solution != population.end() - ELITIST_SELECT; --solution, ++elite)
+    {
+      free(*solution);
+      *solution = *elite;
+    }
+
+    elite_solutions.clear();
   }
 
   Solution *best = select_best_solution();
@@ -228,6 +248,7 @@ int main ()
 
 void print_pop()
 {
+  std::cout << "\n";
   for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
     (*solution)->print();
