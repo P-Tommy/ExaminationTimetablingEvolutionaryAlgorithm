@@ -8,8 +8,8 @@
 #include <map>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "yor-f-83.crs"
-#define PROBLEM_STU "yor-f-83.stu"
+#define PROBLEM_CRS "tre-s-92.crs"
+#define PROBLEM_STU "tre-s-92.stu"
 
 // Penalizations
 #define W0 16
@@ -18,9 +18,8 @@
 #define W3 2
 #define W4 1
 
-#define POP_SIZE 50
-#define MAX_GENERATIONS 1000 // Number of total generations before stopping
-#define ELITIST_SELECT 1
+#define POP_SIZE 10
+#define MAX_GENERATIONS 100 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.1 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.2 // Probability of a HC ocurring
@@ -202,7 +201,7 @@ bool Solution::operator< (Solution param) {
   return (aptitude < param.aptitude);
 }
 
-std::vector< Solution* > population;
+std::vector< Solution > population;
 
 // Fills the conflicts matrix
 void fill_conflicts();
@@ -214,18 +213,12 @@ int get_total_exams();
 void generate_population();
 void destroy_population();
 
-Solution* select_best_solution();
-
-bool compare_sol(Solution* a, Solution* b)
-{
-  return (*a).aptitude < (*b).aptitude;
-}
+Solution select_best_solution();
 
 int main ()
 {
   srand(10000); // Sets a random seed
 
-  std::vector<Solution*> elite_solutions;
   total_exams = get_total_exams();
 
   fill_conflicts();
@@ -233,64 +226,50 @@ int main ()
   generate_population();
     // print_pop();
 
+  Solution best = select_best_solution();
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
-    std::sort(population.begin(), population.end(), compare_sol);
+    best = select_best_solution();
+    std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
 
-    std::cout << "Generation " << cur_generation << ", Best: " << population.front()->aptitude << " Worst: " << population.back()->aptitude << "\n";
-    // print_pop();
-    // We select the best solutions
-    for (std::vector< Solution* >::iterator solution = population.begin(); solution != population.begin() + ELITIST_SELECT; ++solution)
-    {
-      Solution* best = new Solution(*(*solution));
-      elite_solutions.push_back(best);
-    }
-
-    for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+    for (std::vector< Solution >::iterator solution = population.begin(); solution != population.end(); ++solution)
     {
       if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
       {
-        (*solution)->hill_climb();
+        (*solution).hill_climb();
       }
-      (*solution)->mutate();
+      (*solution).mutate();
     }
 
-    std::sort(population.begin(), population.end(), compare_sol);
-    for (std::vector< Solution* >::iterator elite = elite_solutions.begin(), solution = population.end() - 1;
-      solution != population.end() - ELITIST_SELECT; --solution, ++elite)
-    {
-      free(*solution);
-      *solution = *elite;
-    }
-
-    elite_solutions.clear();
+    // Elitism
+    population.pop_back();
+    population.push_back(best);
   }
 
-  Solution *best = select_best_solution();
+  best = select_best_solution();
   std::cout << "Best solution: ";
-  best->print();
+  best.print();
 
-  destroy_population();
   return 0;
 }
 
 void print_pop()
 {
-  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+  for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
-    (*solution)->print();
+    (*solution).print();
   }
 }
 
-Solution* select_best_solution()
+Solution select_best_solution()
 {
-  Solution *best = *(population.begin());
+  Solution *best = &(*population.begin());
 
-  for (std::vector< Solution* >::iterator solution = population.begin() + 1; solution != population.end(); ++solution)
-    if ((*solution)->aptitude < best->aptitude)
-      best = *solution;
+  for (std::vector< Solution >::iterator solution = population.begin() + 1; solution != population.end(); ++solution)
+    if ((*solution).aptitude < best->aptitude)
+      best = &(*solution);
 
-  return best;
+  return *best;
 }
 
 void fill_conflicts()
@@ -351,16 +330,8 @@ void generate_population()
 {
   population.resize(POP_SIZE);
 
-  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
+  for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
-    *solution = new Solution();
-  }
-}
-
-void destroy_population()
-{
-  for (std::vector< Solution* >::iterator solution = population.begin() ; solution != population.end(); ++solution)
-  {
-    free(*solution);
+    *solution = Solution();
   }
 }
