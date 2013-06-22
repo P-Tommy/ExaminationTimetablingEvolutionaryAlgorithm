@@ -14,7 +14,7 @@
 // #define PROBLEM_STU "asd.stu"
 
 #define POP_SIZE 10
-#define MAX_GENERATIONS 100 // Number of total generations before stopping
+#define MAX_GENERATIONS 1000 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.1 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.2 // Probability of a HC ocurring
@@ -229,9 +229,13 @@ int main ()
   Solution best = select_best_solution();
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
-    best = select_best_solution();
-    selection();
     std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
+
+    // Select the best solution for Elitism
+    best = select_best_solution();
+
+    // Make a selection of the current population to generate the next one
+    selection();
 
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
@@ -245,7 +249,7 @@ int main ()
       new_population.push_back(population.at(i));
     }
 
-    // Elitism
+    // Elitism, keep the best solution from the last generation
     new_population.push_back(best);
 
     population = new_population;
@@ -263,7 +267,7 @@ void selection()
   std::vector< Solution > new_population;
   std::vector< Solution > selected_solutions; // Solutions selected for the tournament
 
-  for (int i = 0; i < POP_SIZE; ++i)
+  for (int i = 0; i < POP_SIZE; ++i) // Generate POP_SIZE individuals
   {
     selected_solutions.clear(); // Start with no solutions
     for (int j = 0; j < TOURNAMENT_SIZE; ++j)
