@@ -10,6 +10,8 @@
 
 #define PROBLEM_CRS "hec-s-92.crs"
 #define PROBLEM_STU "hec-s-92.stu"
+// #define PROBLEM_CRS "asd.crs"
+// #define PROBLEM_STU "asd.stu"
 
 #define POP_SIZE 10
 #define MAX_GENERATIONS 100 // Number of total generations before stopping
@@ -18,9 +20,9 @@
 #define PROB_CLIMB 0.2 // Probability of a HC ocurring
 
 #define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
-#define MAX_HC_RETRIES 50 // Maximum retries for searching a feasible solution
+#define MAX_FEASIBLE_RETRIES 20 // Maximum retries for a feasible solution
 
-#define TOURNAMENT_SIZE 5 // Size of the tournaments for the selection algorithn
+#define TOURNAMENT_SIZE 3 // Size of the tournaments for the selection algorithn
 
 unsigned total_exams; // Number of exams
 
@@ -47,19 +49,18 @@ public:
       // Fill every exam with it's own timeslot to generate a feasible solution
       int random;
       do {
-        random = (int)(((float) total_exams/2)*rand()/(RAND_MAX + 1.0));
+        random = (int)(((float) total_exams)*rand()/(RAND_MAX + 1.0));
         genotype.push_back(random);
         if (is_feasible(i))
           break;
         else
           genotype.pop_back();
       } while(true);
-      exams_in_timeslot[random] = 1;
+      exams_in_timeslot[random]++;
     }
 
     recalculate_used_timeslots();
     calculate_aptitude();
-    print();
   }
 
   bool operator<(Solution);
@@ -104,25 +105,21 @@ public:
 
   void mutate()
   {
-    for (std::vector<int>::iterator exam = genotype.begin() ; exam != genotype.end(); ++exam)
+    for (int exam = 0; exam < total_exams; ++exam)
     {
       if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
       {
         // Mutate until we have a feasible solution
-        for (int retries = 0; retries < MAX_HC_RETRIES; ++retries)
+        for (int retries = 0; retries < MAX_FEASIBLE_RETRIES; ++retries)
         {
-          int prev_timeslot = *exam;
-          exams_in_timeslot[*exam]--;
-          *exam = (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0));
-          exams_in_timeslot[*exam]++;
+          int prev_timeslot = genotype.at(exam);
 
+          assign_timeslot(exam, (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0)));
           if(is_feasible())
             break;
           else // Undo the changes
           {
-            exams_in_timeslot[*exam]--;
-            *exam = prev_timeslot;
-            exams_in_timeslot[*exam]++;
+            assign_timeslot(exam, prev_timeslot);
           }
         };
       }
@@ -130,6 +127,15 @@ public:
 
     recalculate_used_timeslots();
     calculate_aptitude();
+  }
+
+  // Assigns the timeslot passed by parameter to the exam that is in the genotype's location
+  // exam
+  void assign_timeslot(int exam, int timeslot)
+  {
+    exams_in_timeslot[genotype.at(exam)]--;
+    genotype.at(exam) = timeslot;
+    exams_in_timeslot[timeslot]++;
   }
 
   void hill_climb()
@@ -140,35 +146,30 @@ public:
     {
       int prev_timeslot, retries = 0;
       int var = (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0));
-      while(retries < MAX_HC_RETRIES)
+
+      for(std::vector<int>::iterator timeslot = used_timeslots.begin(); timeslot != used_timeslots.end(); ++timeslot)
       {
         prev_timeslot = candidate.genotype.at(var);
 
-        candidate.genotype.at(var) = used_timeslots.at(rand() % used_timeslots.size());
-        retries++;
+        candidate.assign_timeslot(var, *timeslot);
 
-        // Iterate until we find a feasible solution
-        if (candidate.is_feasible())
+        candidate.recalculate_used_timeslots();
+        candidate.calculate_aptitude();
+
+        // If the new genotype has a better aptitude than the current best,
+        // we make the swap in the current solution. We do not copy the candidate
+        // over the current solution for performance reasons
+        if (candidate.is_feasible() && candidate.aptitude < aptitude)
+        {
+          assign_timeslot(var, candidate.genotype.at(var));
+
+          recalculate_used_timeslots();
+          calculate_aptitude();
+
           break;
-        else
-          candidate.genotype.at(var) = prev_timeslot; // Reverse the change
+        } else
+          candidate.assign_timeslot(var, prev_timeslot); // Reverse the change
       }
-
-      recalculate_used_timeslots();
-      candidate.calculate_aptitude();
-
-      // If the new genotype has a better aptitude than the current best,
-      // we make the swap in the current solution. We do not copy the candidate
-      // over the current solution for performance reasons
-      if (candidate.aptitude < aptitude)
-      {
-        genotype.at(var) = candidate.genotype.at(var);
-
-        recalculate_used_timeslots();
-        calculate_aptitude();
-      }
-      else
-        candidate.genotype.at(var) = prev_timeslot; // Reverse the change
     }
   }
 
@@ -230,7 +231,7 @@ int main ()
   {
     best = select_best_solution();
     selection();
-    // std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
+    std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
 
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
