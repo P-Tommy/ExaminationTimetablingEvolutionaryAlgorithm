@@ -8,8 +8,8 @@
 #include <map>
 #include <boost/tokenizer.hpp>
 
-#define PROBLEM_CRS "tre-s-92.crs"
-#define PROBLEM_STU "tre-s-92.stu"
+#define PROBLEM_CRS "hec-s-92.crs"
+#define PROBLEM_STU "hec-s-92.stu"
 
 #define POP_SIZE 10
 #define MAX_GENERATIONS 100 // Number of total generations before stopping
@@ -47,18 +47,19 @@ public:
       // Fill every exam with it's own timeslot to generate a feasible solution
       int random;
       do {
-        random = (int)(((float) total_exams)*rand()/(RAND_MAX + 1.0));
+        random = (int)(((float) total_exams/2)*rand()/(RAND_MAX + 1.0));
         genotype.push_back(random);
         if (is_feasible(i))
           break;
         else
           genotype.pop_back();
       } while(true);
-      exams_in_timeslot[i] = 1;
+      exams_in_timeslot[random] = 1;
     }
 
     recalculate_used_timeslots();
     calculate_aptitude();
+    print();
   }
 
   bool operator<(Solution);
@@ -229,7 +230,7 @@ int main ()
   {
     best = select_best_solution();
     selection();
-    std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
+    // std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
 
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
