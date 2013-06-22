@@ -11,13 +11,6 @@
 #define PROBLEM_CRS "tre-s-92.crs"
 #define PROBLEM_STU "tre-s-92.stu"
 
-// Penalizations
-#define W0 16
-#define W1 8
-#define W2 4
-#define W3 2
-#define W4 1
-
 #define POP_SIZE 10
 #define MAX_GENERATIONS 100 // Number of total generations before stopping
 
@@ -26,6 +19,8 @@
 
 #define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
 #define MAX_HC_RETRIES 50 // Maximum retries for searching a feasible solution
+
+#define TOURNAMENT_SIZE 5 // Size of the tournaments for the selection algorithn
 
 unsigned total_exams; // Number of exams
 
@@ -214,6 +209,10 @@ void generate_population();
 void destroy_population();
 
 Solution select_best_solution();
+void selection();
+
+// Return true if the solution a has a better (less or equal) aptitude than b
+bool compare_solutions(const Solution a, const Solution b);
 
 int main ()
 {
@@ -224,26 +223,30 @@ int main ()
   fill_conflicts();
 
   generate_population();
-    // print_pop();
 
   Solution best = select_best_solution();
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
     best = select_best_solution();
+    selection();
     std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
 
-    for (std::vector< Solution >::iterator solution = population.begin(); solution != population.end(); ++solution)
+    std::vector< Solution > new_population;
+    for (int i = 0; i < POP_SIZE - 1; ++i)
     {
       if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
       {
-        (*solution).hill_climb();
+        population.at(i).hill_climb();
       }
-      (*solution).mutate();
+      population.at(i).mutate();
+
+      new_population.push_back(population.at(i));
     }
 
     // Elitism
-    population.pop_back();
-    population.push_back(best);
+    new_population.push_back(best);
+
+    population = new_population;
   }
 
   best = select_best_solution();
@@ -253,12 +256,43 @@ int main ()
   return 0;
 }
 
+void selection()
+{
+  std::vector< Solution > new_population;
+  std::vector< Solution > selected_solutions; // Solutions selected for the tournament
+
+  for (int i = 0; i < POP_SIZE; ++i)
+  {
+    selected_solutions.clear(); // Start with no solutions
+    for (int j = 0; j < TOURNAMENT_SIZE; ++j)
+    {
+      // Select a random solution from the population
+      selected_solutions.push_back(population.at((int)(((float) POP_SIZE - 1)*rand()/(RAND_MAX + 1.0))));
+    }
+
+    // Select the best solution from the selected ones
+    std::sort(selected_solutions.begin(), selected_solutions.end(), compare_solutions);
+
+    new_population.push_back(selected_solutions.front()); // And add it to the new population
+  }
+
+  // The new population is now the real one
+  population = new_population;
+}
+
+bool compare_solutions(const Solution a, const Solution b)
+{
+  return a.aptitude <= b.aptitude;
+}
+
 void print_pop()
 {
+  std::cout << "Sol: ";
   for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
-    (*solution).print();
+    std::cout << (*solution).aptitude << " ";
   }
+  std::cout << "\n";
 }
 
 Solution select_best_solution()
