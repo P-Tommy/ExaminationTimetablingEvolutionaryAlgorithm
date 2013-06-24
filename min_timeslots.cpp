@@ -14,9 +14,9 @@
 // #define PROBLEM_STU "asd.stu"
 
 #define POP_SIZE 10
-#define MAX_GENERATIONS 1000 // Number of total generations before stopping
+#define MAX_GENERATIONS 5000 // Number of total generations before stopping
 
-#define PROB_MUTATION 0.1 // Probability of a mutation in one gene of a solution
+#define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
 #define PROB_CLIMB 0.2 // Probability of a HC ocurring
 
 #define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
@@ -74,6 +74,9 @@ public:
     aptitude = used_timeslots.size();
   }
 
+  // Checks every timeslot and checks if it's being
+  // used by an exam. If it is, it's added to the
+  // used_timeslots vector.
   void recalculate_used_timeslots()
   {
     used_timeslots.clear();
@@ -94,6 +97,8 @@ public:
     return true;
   }
 
+  // Returns true if the solution is feasible considering
+  // the exams up to the passed exam
   bool is_feasible(int exam)
   {
     for (int i = 0; i < genotype.size(); ++i)
@@ -103,6 +108,7 @@ public:
     return true;
   }
 
+  // Iterate
   void mutate()
   {
     for (int exam = 0; exam < total_exams; ++exam)
