@@ -14,7 +14,7 @@ in the project's folder and a min_timeslots executable will be generated.
 If you want to do a manual compilation, just use g++ or c++ and be sure
 to include boost
 
-  `$ g++ -I -W /boost min_timeslots.cpp -o min_timeslots`
+  `$ g++ -W -I /boost min_timeslots.cpp -o min_timeslots`
 
 Note: If boost is installed in your system, you don't need to include it in the compilation
 process.
