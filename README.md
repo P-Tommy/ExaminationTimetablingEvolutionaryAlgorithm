@@ -16,6 +16,8 @@ to include boost
 
   `$ g++ -W -I /boost min_timeslots.cpp -o min_timeslots`
 
+  `$ g++ -W -I /boost min_cost.cpp -o min_cost`
+
 Note: If boost is installed in your system, you don't need to include it in the compilation
 process.
 
@@ -53,6 +55,11 @@ For example, to use the car-f-92.crs and car-f-92.stu files:
 
   `$ ./min_timeslots car-f-92`
 
+For the `min_cost` program, you need to also
+specify the total number of timeslots to be used
+
+  `$ ./min_cost car-f-92 35`
+
 ## Parameters ##
 In the beggining of the file min_timeslots.cpp there are a set of parameters that can be changed
 to tune the performance of the algorithm. They are:
@@ -65,10 +72,17 @@ to tune the performance of the algorithm. They are:
 * `MAX_FEASIBLE_RETRIES`: The maximum retries to do to try to get a feasible solution.
 * `TOURNAMENT_SIZE`: The size of the tournament selection algorithm.
 
+in the case of the `min_cost` program, there
+are these additional parameters:
+
+* `WX`: Penalization for two conflicting exams separated
+by a distance of X
+
 ## Output ##
 The program will output in STDOUT the aptitude of the best solution of each generation, and the (acumulative)
 time elapsed since the beggining of the algorithm.
 
 When the algorithm is done (it has generated all the generations it was set to do), it will output the
-best solution, the total time it took to get it, and the aptitude (the total timeslots used) of that solution.
+best solution, the total time it took to get it, and the aptitude (the total timeslots used or the cost
+per student) of that solution.
 The format of the solution is the timeslot assigned for each exam, ordered by exam id, separated by a space.
