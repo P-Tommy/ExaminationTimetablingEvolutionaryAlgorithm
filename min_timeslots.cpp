@@ -6,25 +6,23 @@
 #include <sstream>
 #include <stdlib.h>
 #include <map>
+#include <string>
+#include <ctime>
 #include <boost/tokenizer.hpp>
-
-#define PROBLEM_CRS "hec-s-92.crs"
-#define PROBLEM_STU "hec-s-92.stu"
-// #define PROBLEM_CRS "asd.crs"
-// #define PROBLEM_STU "asd.stu"
 
 #define POP_SIZE 10
 #define MAX_GENERATIONS 5000 // Number of total generations before stopping
 
 #define PROB_MUTATION 0.05 // Probability of a mutation in one gene of a solution
-#define PROB_CLIMB 0.2 // Probability of a HC ocurring
+#define PROB_CLIMB 0.25 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 30 // Maximum of iterations in the AC algorithm
-#define MAX_FEASIBLE_RETRIES 20 // Maximum retries for a feasible solution
+#define HC_ITERATIONS 100 // Maximum of iterations in the AC algorithm
+#define MAX_FEASIBLE_RETRIES 30 // Maximum retries for a feasible solution
 
 #define TOURNAMENT_SIZE 3 // Size of the tournaments for the selection algorithn
 
-unsigned total_exams; // Number of exams
+int total_exams; // Number of exams
+std::string dataset_name;
 
 // The conflict matrix saves in each cell (i,j) the number of students
 // with a conflict between the exams i and j
@@ -33,6 +31,16 @@ std::vector< std::vector<int> > conflicts;
 // Represents a solution
 class Solution
 {
+private:
+  // Assigns the timeslot passed by parameter to the exam that is in the genotype's location
+  // exam
+  void assign_timeslot(int exam, int timeslot)
+  {
+    exams_in_timeslot[genotype.at(exam)]--;
+    genotype.at(exam) = timeslot;
+    exams_in_timeslot[timeslot]++;
+  }
+
 public:
   int aptitude;
 
@@ -49,9 +57,9 @@ public:
       // Fill every exam with it's own timeslot to generate a feasible solution
       int random;
       do {
-        random = (int)(((float) total_exams)*rand()/(RAND_MAX + 1.0));
+        random = (int)(((float) total_exams-1)*rand()/(RAND_MAX + 1.0));
         genotype.push_back(random);
-        if (is_feasible(i))
+        if (is_feasible_up_to(i))
           break;
         else
           genotype.pop_back();
@@ -97,11 +105,24 @@ public:
     return true;
   }
 
-  // Returns true if the solution is feasible considering
-  // the exams up to the passed exam
+  // Returns true if the solution is feasible, considering
+  // only one exam compared to the others
   bool is_feasible(int exam)
   {
-    for (int i = 0; i < genotype.size(); ++i)
+    for (int i = 0; i < total_exams; ++i)
+      if (exam != i &&
+        conflicts.at(exam).at(i) > 0 &&
+        genotype.at(exam) == genotype.at(i)) // If there is a conflict
+        return false; // Solution not feasible
+
+    return true;
+  }
+
+  // Returns true if the solution is feasible considering
+  // the exams up to the passed exam
+  bool is_feasible_up_to(int exam)
+  {
+    for (int i = 0; i < (int) genotype.size(); ++i)
       if (i != exam && conflicts.at(exam).at(i) > 0 && genotype.at(exam) == genotype.at(i)) // If there is a conflict
         return false; // Solution not feasible
 
@@ -120,8 +141,8 @@ public:
         {
           int prev_timeslot = genotype.at(exam);
 
-          assign_timeslot(exam, (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0)));
-          if(is_feasible())
+          assign_timeslot(exam, (int)(( (float) total_exams-1 )*rand()/(RAND_MAX + 1.0)));
+          if(is_feasible(exam))
             break;
           else // Undo the changes
           {
@@ -135,47 +156,35 @@ public:
     calculate_aptitude();
   }
 
-  // Assigns the timeslot passed by parameter to the exam that is in the genotype's location
-  // exam
-  void assign_timeslot(int exam, int timeslot)
-  {
-    exams_in_timeslot[genotype.at(exam)]--;
-    genotype.at(exam) = timeslot;
-    exams_in_timeslot[timeslot]++;
-  }
-
   void hill_climb()
   {
-    Solution candidate = *this;
-
     for (int i = 0; i < HC_ITERATIONS; ++i)
     {
-      int prev_timeslot, retries = 0;
-      int var = (int)(( (float) total_exams )*rand()/(RAND_MAX + 1.0));
+      Solution candidate = *this;
+
+      int var = (int)(( (float) total_exams-1 )*rand()/(RAND_MAX + 1.0));
 
       for(std::vector<int>::iterator timeslot = used_timeslots.begin(); timeslot != used_timeslots.end(); ++timeslot)
       {
-        prev_timeslot = candidate.genotype.at(var);
-
         candidate.assign_timeslot(var, *timeslot);
-
         candidate.recalculate_used_timeslots();
         candidate.calculate_aptitude();
 
         // If the new genotype has a better aptitude than the current best,
         // we make the swap in the current solution. We do not copy the candidate
         // over the current solution for performance reasons
-        if (candidate.is_feasible() && candidate.aptitude < aptitude)
+        if (candidate.is_feasible(var) && candidate.aptitude < aptitude)
         {
-          assign_timeslot(var, candidate.genotype.at(var));
+          assign_timeslot(var, *timeslot);
 
-          recalculate_used_timeslots();
-          calculate_aptitude();
+          used_timeslots = candidate.used_timeslots;
+          aptitude = candidate.aptitude;
 
+          // std::cout << aptitude << std::endl;
           break;
-        } else
-          candidate.assign_timeslot(var, prev_timeslot); // Reverse the change
+        }
       }
+
     }
   }
 
@@ -222,20 +231,33 @@ void selection();
 // Return true if the solution a has a better (less or equal) aptitude than b
 bool compare_solutions(const Solution a, const Solution b);
 
-int main ()
+int main(int argc, char* argv[])
 {
-  srand(10000); // Sets a random seed
+  srand(10000);
+  // srand(123456);
+  // srand(854234);
+  // srand (time(NULL)); // Sets a random seed
+
+  std::vector<std::string> params(argv, argv+argc);
+  if (argc < 2) { // Missing arguments
+    std::cerr << "Usage: " << argv[0] << " DATASET_NAME" << std::endl;
+    return 1;
+  }
+
+  dataset_name = params.at(1);
 
   total_exams = get_total_exams();
 
   fill_conflicts();
 
+  const clock_t begin_time = clock();
   generate_population();
-
+print_pop();
   Solution best = select_best_solution();
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
     std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
+    std::cout << "Elapsed time: " << float( clock () - begin_time ) /  (CLOCKS_PER_SEC/1000) << "ms\n";
 
     // Select the best solution for Elitism
     best = select_best_solution();
@@ -246,11 +268,10 @@ int main ()
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
     {
+      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
+        population.at(i).mutate();
       if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
-      {
         population.at(i).hill_climb();
-      }
-      population.at(i).mutate();
 
       new_population.push_back(population.at(i));
     }
@@ -262,6 +283,8 @@ int main ()
   }
 
   best = select_best_solution();
+
+  std::cout << "Time used: " << float( clock () - begin_time ) /  (CLOCKS_PER_SEC/1000) << "ms\n";
   std::cout << "Best solution: ";
   best.print();
 
@@ -299,7 +322,6 @@ bool compare_solutions(const Solution a, const Solution b)
 
 void print_pop()
 {
-  std::cout << "Sol: ";
   for (std::vector< Solution >::iterator solution = population.begin() ; solution != population.end(); ++solution)
   {
     std::cout << (*solution).aptitude << " ";
@@ -327,7 +349,8 @@ void fill_conflicts()
     conflicts[i].resize(total_exams);
 
   // Read the students file to fill the conflicts matrix
-  std::ifstream infile(PROBLEM_STU);
+  std::string filename = dataset_name + ".stu";
+  std::ifstream infile(filename.c_str());
 
   boost::char_separator<char> sep(" "); // Exams separated by spaces
 
@@ -356,11 +379,14 @@ void fill_conflicts()
       }
     }
   }
+
+  infile.close();
 }
 
 int get_total_exams()
 {
-  std::ifstream exams_file(PROBLEM_CRS);
+  std::string filename = dataset_name + ".crs";
+  std::ifstream exams_file(filename.c_str());
 
   // Count the newlines to get the total of exams
   exams_file.unsetf(std::ios_base::skipws); // Don't skip newlines
@@ -368,6 +394,7 @@ int get_total_exams()
                            std::istream_iterator<char>(exams_file),
                            std::istream_iterator<char>(),
                            '\n');
+  exams_file.close();
 
   return total_exams;
 }
