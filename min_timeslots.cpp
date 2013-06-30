@@ -352,6 +352,11 @@ void fill_conflicts()
   std::string filename = dataset_name + ".stu";
   std::ifstream infile(filename.c_str());
 
+  if(!infile.is_open()) {
+    std::cout << "Error reading file" << std::endl;
+    exit(0);
+  }
+
   // We parse every line of the file, filling the conflict matrix
   std::string line;
 
@@ -382,6 +387,11 @@ int get_total_exams()
 {
   std::string filename = dataset_name + ".crs";
   std::ifstream exams_file(filename.c_str());
+
+  if(!exams_file.is_open()) {
+    std::cout << "Error reading file" << std::endl;
+    exit(0);
+  }
 
   // Count the newlines to get the total of exams
   exams_file.unsetf(std::ios_base::skipws); // Don't skip newlines
