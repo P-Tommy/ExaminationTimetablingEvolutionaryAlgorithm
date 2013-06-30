@@ -1,23 +1,5 @@
 # README #
 
-## Requirements ##
-This program requires the BOOST library (http://www.boost.org/ tested with 1.53.0).
-
-To install boost on ubuntu do
-
-  `sudo apt-get install libboost-all-dev`
-
-## Compilation ##
-You can use the included makefile to do the compilation, in that case, just do
-
-  `$ make`
-
-in the project's folder and a min_timeslots executable will be generated.
-
-If you want to do a manual compilation, just use g++ compiler
-
-  `$ g++ -W min_timeslots.cpp -o min_timeslots`
-
 ## Dataset ##
 To execute the program, you need a dataset (it was tested with the University of Toronto Benchmark
 Data http://www.asap.cs.nott.ac.uk/external/resources/files/Toronto.zip) that has a .crs and a .stu

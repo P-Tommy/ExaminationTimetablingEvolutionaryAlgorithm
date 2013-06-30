@@ -8,7 +8,6 @@
 #include <map>
 #include <string>
 #include <ctime>
-#include <boost/tokenizer.hpp>
 
 #define POP_SIZE 10
 #define MAX_GENERATIONS 5000 // Number of total generations before stopping
@@ -353,32 +352,27 @@ void fill_conflicts()
   std::string filename = dataset_name + ".stu";
   std::ifstream infile(filename.c_str());
 
-  boost::char_separator<char> sep(" "); // Exams separated by spaces
-
   // We parse every line of the file, filling the conflict matrix
   std::string line;
+
   while (std::getline(infile, line))
   {
 
     // We tokenize the line and mark as conflicts every pair of exams
     // that appears in the same line
-    std::istringstream iss(line);
-    boost::tokenizer<boost::char_separator<char> > tokens(line, sep);
-    if (tokens.begin() != tokens.end())   // Check if there is more than one exam
-    {
-      for(boost::tokenizer< boost::char_separator<char> >::iterator exam = tokens.begin(); exam != tokens.end(); ++exam)
-      {
-        boost::tokenizer< boost::char_separator<char> >::iterator other_exam = exam;
+    std::stringstream strstr(line);
+    std::istream_iterator<std::string> it(strstr);
+    std::istream_iterator<std::string> end;
+    std::vector<std::string> exams(it, end);
 
-        // We iterate on all the remaining exams in the line, after the current one
-        // and mark the couple (current, next) and (next, current) as conflicted
-        for(other_exam++; other_exam != tokens.end(); ++other_exam)
-        {
-          conflicts[atoi((*exam).c_str()) - 1][atoi((*other_exam).c_str()) - 1]++;
-          conflicts[atoi((*other_exam).c_str()) - 1][atoi((*exam).c_str()) - 1]++;
-        }
+    // We iterate on all the remaining exams in the line, after the current one
+    // and mark the couple (current, next) and (next, current) as conflicted
+    for (std::vector<std::string>::iterator exam = exams.begin() ; exam != exams.end(); ++exam)
+      for (std::vector<std::string>::iterator other_exam = exam + 1; other_exam != exams.end(); ++other_exam)
+      {
+        conflicts[atoi((*exam).c_str()) - 1][atoi((*other_exam).c_str()) - 1]++;
+        conflicts[atoi((*other_exam).c_str()) - 1][atoi((*exam).c_str()) - 1]++;
       }
-    }
   }
 
   infile.close();
