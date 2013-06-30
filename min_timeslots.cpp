@@ -134,7 +134,7 @@ public:
   {
     for (int exam = 0; exam < total_exams; ++exam)
     {
-      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
+      if ( ((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
       {
         // Mutate until we have a feasible solution
         for (int retries = 0; retries < MAX_FEASIBLE_RETRIES; ++retries)
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
   const clock_t begin_time = clock();
   generate_population();
-print_pop();
+
   Solution best = select_best_solution();
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
@@ -268,9 +268,10 @@ print_pop();
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
     {
-      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
+      if ( ((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_MUTATION)
         population.at(i).mutate();
-      if ( (int)((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
+
+      if ( ((1.0)*rand()/(RAND_MAX + 1.0)) < PROB_CLIMB)
         population.at(i).hill_climb();
 
       new_population.push_back(population.at(i));
