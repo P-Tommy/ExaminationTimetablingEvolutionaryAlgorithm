@@ -1,9 +1,9 @@
 # README #
 
 ## Dataset ##
-To execute the program, you need a dataset (it was tested with the University of Toronto Benchmark
-Data http://www.asap.cs.nott.ac.uk/external/resources/files/Toronto.zip) that has a .crs and a .stu
-files. The .crs file should have the structure:
+Para ejecutar el programa, se necesita un dataset (se ha probado con el dataset University of Toronto Benchmark
+Data http://www.asap.cs.nott.ac.uk/external/resources/files/Toronto.zip) que tiene un archivo .crs y .stu.
+El archivo .crs debe tener la estructura:
 
 ```
     0001 123
@@ -12,10 +12,11 @@ files. The .crs file should have the structure:
     9999 102
 ```
 
-(only whitespace is a single space between the first number and the second)
-where the first is an identifier for the exam, and the second is the total of students taking that exam.
-There should be one line per exam.
-The other file, .stu, has the students information, for example:
+donde el primer número es un identificador del examen, y el segundo es el total de estudiantes
+tomando ese examen.
+Debe haber una línea por examen.
+
+El archivo .stu contiene la información de los estudiantes, por ejemplo:
 
 ```
     0417
@@ -23,34 +24,37 @@ The other file, .stu, has the students information, for example:
     0001
 ```
 
-where each line represents a student, and each number an exam that the student is taking. If there is
-more than one exam in the line, they are in conflict.
+donde cada línea representa a un estudiante, y cada número es un examen que el estudiante está tomando.
 
-## Usage ##
-To execute the program, you just need to execute the compiled executable and pass it the name
-of the set (no extension) you want to test (the two files need to be in the same folder).
-
-For example, to use the car-f-92.crs and car-f-92.stu files:
+## Uso ##
+Para ejecutar el programa, se debe compilar el ejecutable y pasarle el nombre del dataset (sin extensión)
+que se queire probar (se debe tener ambos archivos en la misma carpeta). Por ejemplo:
 
   `$ ./min_timeslots car-f-92`
 
-## Parameters ##
-In the beggining of the file min_timeslots.cpp there are a set of parameters that can be changed
-to tune the performance of the algorithm. They are:
+## Parámetros ##
+En el comienzo del archivo min_timeslots.cpp hay un conjunto de parámetros que pueden ser modificados
+para mejorar el comportamiento del algoritmo en algunos casos. Son:
 
-* `POP_SIZE`: The size of the population.
-* `MAX_GENERATIONS`: The total number of generations to execute. After that, the algorithm will stop.
-* `PROB_MUTATION`: The probability that a mutation happens to one gene of a genotype.
-* `PROB_CLIMB`: The probability that a solution is passed through the Hill Climb algorithm.
-* `HC_ITERATIONS`: The total iterations for the Hill Climbing algorithm.
-* `MAX_FEASIBLE_RETRIES`: The maximum retries to do to try to get a feasible solution.
-* `TOURNAMENT_SIZE`: The size of the tournament selection algorithm.
+* `POP_SIZE`: Tamaño de la población
+* `MAX_GENERATIONS`: Total de generaciones a ejecutar (después de ellas se detiene el algoritmo)
+* `PROB_MUTATION`: La probabilidad que ocurra una mutación
+* `PROB_CLIMB`: La probabilidad que ocurra un Hill-Climbing
+* `HC_ITERATIONS`: La cantidad de iteraciones que se llevan a cabo en el Hill-Climbing
+* `MAX_FEASIBLE_RETRIES`: La máxima cantidad de reintentos en la mutación para alcanzar una solución factible
+* `TOURNAMENT_SIZE`: El tamaño del torneo para la selección
+
+Además, al comienzo de la rutina main se da una semilla para generar los números aleatorios. Para las pruebas
+se ocuparon las siguientes:
+
+  srand(10000);
+  srand(123456);
+  srand(854234);
 
 ## Output ##
-The program will output in STDOUT the aptitude of the best solution of each generation, and the (acumulative)
-time elapsed since the beggining of the algorithm.
+El programa mostrará la mejor aptitud de cada generación y el tiempo acumulado de ejecución.
 
-When the algorithm is done (it has generated all the generations it was set to do), it will output the
-best solution, the total time it took to get it, and the aptitude (the total timeslots used or the cost
-per student) of that solution.
-The format of the solution is the timeslot assigned for each exam, ordered by exam id, separated by a space.
+Cuando el algoritmo termina, muestra la mejor solución, el tiempo total utilizado, y la aptitud
+de ésta solución.
+
+El formato de la solución es que cada número representa el id del timeslot asignado a un examen.
