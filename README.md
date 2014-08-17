@@ -1,9 +1,12 @@
-# README #
+# Examination Timetabling Evolutionary Algorithm #
+The following software is an implementation of an Evolutionary Algorithm using mutation and Hill-Climbing
+to solve the Examination Timetabling problem.
 
 ## Dataset ##
-Para ejecutar el programa, se necesita un dataset (se ha probado con el dataset University of Toronto Benchmark
-Data http://www.asap.cs.nott.ac.uk/external/resources/files/Toronto.zip) que tiene un archivo .crs y .stu.
-El archivo .crs debe tener la estructura:
+To execute the program, you need a DataSet (the dataset used was the one from University of Toronto Benchmark
+Data http://www.asap.cs.nott.ac.uk/external/resources/files/Toronto.zip) with .crs and .stu files.
+
+The .crs file need to have the following structure:
 
 ```
     0001 123
@@ -12,11 +15,10 @@ El archivo .crs debe tener la estructura:
     9999 102
 ```
 
-donde el primer número es un identificador del examen, y el segundo es el total de estudiantes
-tomando ese examen.
-Debe haber una línea por examen.
+where the first number is an ID for the exam, and the second is the total number of students taking that exam.
+There must be one line per exam.
 
-El archivo .stu contiene la información de los estudiantes, por ejemplo:
+The .stu file contains the information about the students, such as:
 
 ```
     0417
@@ -24,37 +26,31 @@ El archivo .stu contiene la información de los estudiantes, por ejemplo:
     0001
 ```
 
-donde cada línea representa a un estudiante, y cada número es un examen que el estudiante está tomando.
+where each line is a student, and each number is an exam that the student is taking.
 
-## Uso ##
-Para ejecutar el programa, se debe compilar el ejecutable y pasarle el nombre del dataset (sin extensión)
-que se queire probar (se debe tener ambos archivos en la misma carpeta). Por ejemplo:
+## Usage ##
+To execute the program, you need to compile it first (use the MAKEFILE), and then run it
+by passing the name of the dataset as an argument (without the file extension of the dataset).
+For example:
 
   `$ ./min_timeslots car-f-92`
 
-## Parámetros ##
-En el comienzo del archivo min_timeslots.cpp hay un conjunto de parámetros que pueden ser modificados
-para mejorar el comportamiento del algoritmo en algunos casos. Son:
+will run the program for the `car-f-92` dataset.
 
-* `POP_SIZE`: Tamaño de la población
-* `MAX_GENERATIONS`: Total de generaciones a ejecutar (después de ellas se detiene el algoritmo)
-* `PROB_MUTATION`: La probabilidad que ocurra una mutación
-* `PROB_CLIMB`: La probabilidad que ocurra un Hill-Climbing
-* `HC_ITERATIONS`: La cantidad de iteraciones que se llevan a cabo en el Hill-Climbing
-* `MAX_FEASIBLE_RETRIES`: La máxima cantidad de reintentos en la mutación para alcanzar una solución factible
-* `TOURNAMENT_SIZE`: El tamaño del torneo para la selección
+## Parameters ##
+At the beggining of the code there is a set of parameters to adjust the algorithm.
+They are:
 
-Además, al comienzo de la rutina main se da una semilla para generar los números aleatorios. Para las pruebas
-se ocuparon las siguientes:
-
-  srand(10000);
-  srand(123456);
-  srand(854234);
+* `POP_SIZE`: Size of the population
+* `MAX_GENERATIONS`: Total number of generations to run (after that the algorithm stops)
+* `PROB_MUTATION`: The probability of a mutation ocurring
+* `PROB_CLIMB`: The probability of a Hill-Climbing ocurrs
+* `HC_ITERATIONS`: The number of iterations for the Hill-Climbing
+* `MAX_FEASIBLE_RETRIES`: The maximum amount of retries in the mutation to achieve a feasable solution
+* `TOURNAMENT_SIZE`: The size of the tournament for the selection
 
 ## Output ##
-El programa mostrará la mejor aptitud de cada generación y el tiempo acumulado de ejecución.
+The program will show the best aptitude for each generation, and the cumulative time of execution.
 
-Cuando el algoritmo termina, muestra la mejor solución, el tiempo total utilizado, y la aptitud
-de ésta solución.
-
-El formato de la solución es que cada número representa el id del timeslot asignado a un examen.
+When the algorithm finishes, it shows the best solution it found, the total time used, and the
+aptitude of that solution.
