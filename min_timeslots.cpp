@@ -15,27 +15,27 @@
 #define PROB_MUTATION 0.05 // Probability of a mutation ocurring
 #define PROB_CLIMB 0.75 // Probability of a HC ocurring
 
-#define HC_ITERATIONS 1000 // Maximum iterations in the AC algorithm
+#define HC_ITERATIONS 1000 // Maximum iterations in the HC algorithm
 #define MAX_FEASIBLE_RETRIES 30 // Maximum retries for a feasible solution
 
 #define TOURNAMENT_SIZE 3 // Size of the tournaments for the selection algorithn
 
-int total_exams; // Number of exams
+int total_exams;
 std::string dataset_name; // Saves the dataset name to read the files
 
 // The conflict matrix saves in each cell (i,j) the number of students
 // with a conflict between the exams i and j
 std::vector< std::vector<int> > conflicts;
 
-// Represents a single solution (a timetable)
+// Represents a timetable
 class Solution
 {
 private:
   // Assigns the timeslot passed by parameter to the exam that is in the genotype's location
   // exam.
   // It makes sure that the count of the exams in a timeslot is correct
-  // @param exam [int] The id of the exam which will be re-assigned
-  // @param timeslot [int] The id of the new timeslot to be assigned to the exam
+  // @param exam The id of the exam which will be re-assigned
+  // @param timeslot The id of the new timeslot to be assigned to the exam
   void assign_timeslot(int exam, int timeslot)
   {
     exams_in_timeslot[genotype.at(exam)]--;
@@ -48,7 +48,7 @@ public:
 
   // Each gene in the genotype saves the Timeslot to which the exam is assigned
   std::vector<int> genotype;
-  std::vector<int> used_timeslots; // Stores the id of the currently used timeslots
+  std::vector<int> used_timeslots;
   std::map<int, int> exams_in_timeslot; // map<Timeslot id, # of exams assigned>
 
   // The default constructor generates a random solution
@@ -108,7 +108,7 @@ public:
 
   // Returns true if the solution is feasible, considering
   // only one exam compared to the others
-  // @param exam [int] The id of the exam to be checked
+  // @param exam The id of the exam to be checked
   bool is_feasible(int exam)
   {
     for (int i = 0; i < total_exams; ++i) // Loop through all the exams
@@ -122,7 +122,7 @@ public:
 
   // Returns true if the solution is feasible considering
   // the exams up to the passed exam
-  // @param exam [int] The id of the last exam that will be checked
+  // @param exam The id of the last exam that will be checked
   bool is_feasible_up_to(int exam)
   {
     for (int i = 0; i < (int) genotype.size(); ++i)
@@ -171,7 +171,7 @@ public:
     {
       Solution candidate = *this;
 
-      int var = (int)(( (float) total_exams-1 )*rand()/(RAND_MAX + 1.0)); // Select a random exam to change
+      int var = (int)(((float) total_exams-1 )*rand()/(RAND_MAX + 1.0)); // Select a random exam to change
 
       // Iterate through every currently used timeslot until we find
       // one that improves the solution's aptitude
@@ -234,9 +234,10 @@ int main(int argc, char* argv[])
   total_exams = get_total_exams();
   fill_conflicts();
 
-  const clock_t begin_time = clock(); // Starts the clock for benchmarks
+  // Start the clock for benchmarks
+  const clock_t begin_time = clock();
 
-  generate_population(); // Generates an initial population of random solutions
+  generate_population();
 
   Solution best = select_best_solution();
 
@@ -244,7 +245,7 @@ int main(int argc, char* argv[])
   for (int cur_generation = 0; cur_generation < MAX_GENERATIONS; ++cur_generation)
   {
 
-    // For every generation, prints the best aptitude yet and the accumulated time
+    // For every generation, print the best aptitude yet and the accumulated time
     std::cout << "Generation " << cur_generation << ", Best: " << best.aptitude << "\n";
     std::cout << "Elapsed time: " << float( clock () - begin_time ) /  (CLOCKS_PER_SEC/1000) << "ms\n";
 
@@ -254,7 +255,7 @@ int main(int argc, char* argv[])
     // Make a selection of the current population to generate the next one
     selection();
 
-    // We create a new population iterating through the selected individuals,
+    // Create a new population iterating through the selected individuals,
     // and applying the operators to them
     std::vector< Solution > new_population;
     for (int i = 0; i < POP_SIZE - 1; ++i)
@@ -268,14 +269,15 @@ int main(int argc, char* argv[])
       new_population.push_back(population.at(i));
     }
 
-    new_population.push_back(best); // Elitism, keep the best solution from the last generation
+    // Elitism, keep the best solution from the last generation
+    new_population.push_back(best);
 
-    population = new_population; // The new population becomes the main population
+    // The new population becomes the main population
+    population = new_population;
   }
 
   best = select_best_solution(); // Select the final best solution
 
-  // Print the result
   std::cout << "Time used: " << float( clock () - begin_time ) /  (CLOCKS_PER_SEC/1000) << "ms\n";
   std::cout << "Best solution: ";
   best.print();
@@ -288,11 +290,12 @@ int main(int argc, char* argv[])
 void selection()
 {
   std::vector< Solution > new_population;
-  std::vector< Solution > selected_solutions; // Solutions selected for the tournament
+  std::vector< Solution > selected_solutions;
 
-  for (int i = 0; i < POP_SIZE; ++i) // Generate POP_SIZE individuals
+  // Generate POP_SIZE individuals
+  for (int i = 0; i < POP_SIZE; ++i)
   {
-    selected_solutions.clear(); // Start with no solutions
+    selected_solutions.clear();
 
     // Select TOURNAMENT_SIZE individuals to compete
     for (int j = 0; j < TOURNAMENT_SIZE; ++j)
@@ -313,8 +316,8 @@ void selection()
 }
 
 // Compares two solutions
-// @param a, b [const Solution] The solutions to compare
-// @return [bool] true if solution a is better (or equal) than b
+// @param a, b The solutions to compare
+// @return true if solution a is better (or equal) than b
 bool compare_solutions(const Solution a, const Solution b)
 {
   return a.aptitude <= b.aptitude;
@@ -329,7 +332,7 @@ void print_pop()
 }
 
 // Selects the best solution from the current population
-// @return [Solution] The currently best solution
+// @return The currently best solution
 Solution select_best_solution()
 {
   Solution *best = &(*population.begin());
@@ -365,14 +368,14 @@ void fill_conflicts()
   while (std::getline(infile, line))
   {
 
-    // We tokenize the line and mark as conflicts every pair of exams
+    // Tokenize the line and mark as conflicts every pair of exams
     // that appears in the same line
     std::stringstream strstr(line);
     std::istream_iterator<std::string> it(strstr);
     std::istream_iterator<std::string> end;
     std::vector<std::string> exams(it, end);
 
-    // We iterate on all the remaining exams in the line, after the current one
+    // Iterate on all the remaining exams in the line, after the current one
     // and mark the couple (current, next) and (next, current) as conflicted
     for (std::vector<std::string>::iterator exam = exams.begin() ; exam != exams.end(); ++exam)
       for (std::vector<std::string>::iterator other_exam = exam + 1; other_exam != exams.end(); ++other_exam)
@@ -386,7 +389,7 @@ void fill_conflicts()
 }
 
 // Calculate the total number of exams by reading the .crs file
-// @return [int] The total number of exams
+// @return The total number of exams
 int get_total_exams()
 {
   // Read the .crs file
